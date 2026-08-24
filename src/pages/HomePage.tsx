@@ -20,6 +20,10 @@ export function HomePage() {
         }
       />
 
+      <Link className="all-records-link" to="/records">
+        全ての病気の記録を見る
+      </Link>
+
       {!conditions ? (
         <p className="empty">読み込み中です。</p>
       ) : conditions.length ? (

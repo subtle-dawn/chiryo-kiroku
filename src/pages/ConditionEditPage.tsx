@@ -45,6 +45,11 @@ export function ConditionEditPage() {
     <main className="page">
       <Header title={conditionId ? "病気を編集" : "病気を追加"} backTo={conditionId ? `/condition/${conditionId}` : "/"} />
       <form className="form" onSubmit={onSubmit}>
+        {!conditionId && (
+          <section className="helper-panel">
+            なんの病気かわからない症状を記録したい場合、「？」などでもOKです。病気の名前や関連する記録はあとから変更できます。
+          </section>
+        )}
         <label>
           <span>病気の名前</span>
           <input value={name} onChange={(event) => setName(event.target.value)} autoFocus />

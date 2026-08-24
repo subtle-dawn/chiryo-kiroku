@@ -6,9 +6,10 @@ import { formatDate } from "../utils/date";
 interface Props {
   record: TreatmentRecord;
   showDate: boolean;
+  conditionName?: string;
 }
 
-export function TimelineItem({ record, showDate }: Props) {
+export function TimelineItem({ record, showDate, conditionName }: Props) {
   return (
     <article className={`timeline-item timeline-item-${record.type}`}>
       <div className="timeline-date" aria-hidden={!showDate}>
@@ -21,6 +22,7 @@ export function TimelineItem({ record, showDate }: Props) {
             編集
           </Link>
         </div>
+        {conditionName && <p className="timeline-condition-name">{conditionName}</p>}
         {record.hospitalName && <p className="timeline-hospital">{record.hospitalName}</p>}
         <p className="preline">{record.body}</p>
       </div>

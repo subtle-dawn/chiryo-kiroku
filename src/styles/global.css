@@ -140,6 +140,20 @@ select {
   gap: 10px;
 }
 
+.all-records-link {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border: 1px solid #e5e5ea;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #007aff;
+  font-weight: 800;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
+}
+
 .condition-card,
 .panel,
 .note-panel,
@@ -296,6 +310,14 @@ select {
   gap: 18px;
 }
 
+.helper-panel {
+  border: 1px solid #e5e5ea;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px;
+  line-height: 1.7;
+}
+
 .visually-hidden-file {
   position: absolute;
   width: 1px;
@@ -444,6 +466,12 @@ textarea {
 
 .timeline-hospital {
   margin: 0;
+  font-weight: 800;
+}
+
+.timeline-condition-name {
+  margin: 0;
+  color: #6b7280;
   font-weight: 800;
 }
 

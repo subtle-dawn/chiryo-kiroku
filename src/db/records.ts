@@ -28,6 +28,9 @@ export async function saveRecord(input: Omit<TreatmentRecord, "id" | "createdAt"
     const record: TreatmentRecord = { ...existing, ...input, updatedAt: now };
     await db.records.put(record);
     await touchCondition(record.conditionId);
+    if (existing.conditionId !== record.conditionId) {
+      await touchCondition(existing.conditionId);
+    }
     return record;
   }
   const record: TreatmentRecord = { id: uuid(), ...input, createdAt: now, updatedAt: now };

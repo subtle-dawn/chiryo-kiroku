@@ -11,6 +11,7 @@ import { todayIsoDate } from "../utils/date";
 export function RecordEditPage() {
   const { conditionId = "", recordId } = useParams();
   const navigate = useNavigate();
+  const conditions = useLiveQuery(() => db.conditions.orderBy("updatedAt").reverse().toArray(), []);
   const record = useLiveQuery(() => (recordId ? db.records.get(recordId) : undefined), [recordId]);
   const hospitalNameOptions =
     useLiveQuery(async () => {
@@ -19,6 +20,7 @@ export function RecordEditPage() {
         a.localeCompare(b, "ja")
       );
     }, []) || [];
+  const [selectedConditionId, setSelectedConditionId] = useState(conditionId);
   const [type, setType] = useState<RecordType>("symptom");
   const needsHospitalName = type === "visit" || type === "test";
   const [date, setDate] = useState(todayIsoDate());
@@ -29,6 +31,7 @@ export function RecordEditPage() {
 
   useEffect(() => {
     if (record) {
+      setSelectedConditionId(record.conditionId);
       setType(record.type);
       setDate(record.date);
       setBody(record.body);
@@ -36,8 +39,18 @@ export function RecordEditPage() {
     }
   }, [record]);
 
+  useEffect(() => {
+    if (!selectedConditionId && conditions?.[0]) {
+      setSelectedConditionId(conditions[0].id);
+    }
+  }, [conditions, selectedConditionId]);
+
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
+    if (!selectedConditionId) {
+      setError("病気を選択してください。");
+      return;
+    }
     if (!date || !body.trim()) {
       setError("日付と本文を入力してください。");
       return;
@@ -46,7 +59,7 @@ export function RecordEditPage() {
       setError("");
       await saveRecord(
         {
-          conditionId,
+          conditionId: selectedConditionId,
           type,
           date,
           body: body.trim(),
@@ -54,7 +67,7 @@ export function RecordEditPage() {
         },
         recordId
       );
-      navigate(`/condition/${conditionId}`);
+      navigate(`/condition/${selectedConditionId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存できませんでした。");
     }
@@ -63,13 +76,23 @@ export function RecordEditPage() {
   async function onDelete() {
     if (!record) return;
     await deleteRecord(record);
-    navigate(`/condition/${conditionId}`);
+    navigate(`/condition/${record.conditionId}`);
   }
 
   return (
     <main className="page">
-      <Header title={recordId ? "記録を編集" : "記録を追加"} backTo={`/condition/${conditionId}`} />
+      <Header title={recordId ? "記録を編集" : "記録を追加"} backTo={`/condition/${selectedConditionId || conditionId}`} />
       <form className="form" onSubmit={onSubmit}>
+        <label>
+          <span>病気</span>
+          <select value={selectedConditionId} onChange={(event) => setSelectedConditionId(event.target.value)}>
+            {(conditions || []).map((condition) => (
+              <option key={condition.id} value={condition.id}>
+                {condition.name}
+              </option>
+            ))}
+          </select>
+        </label>
         <fieldset className="radio-group">
           <legend>種類</legend>
           {recordTypes.map((recordType) => (
