@@ -1,5 +1,6 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { Link, useLocation } from "react-router-dom";
+import { ConsultationNote } from "../components/ConsultationNote";
 import { Header } from "../components/Header";
 import { TimelineItem } from "../components/TimelineItem";
 import { db } from "../db/db";
@@ -17,15 +18,28 @@ export function HospitalRecordsPage() {
       db.conditions.toArray(),
       db.records.toArray()
     ]);
+    const sortedRecords = sortRecords(records);
+    const primaryHospitalByCondition = new Map<string, string>();
+    for (const record of sortedRecords) {
+      const name = record.hospitalName?.trim();
+      if (name && !primaryHospitalByCondition.has(record.conditionId)) {
+        primaryHospitalByCondition.set(record.conditionId, name);
+      }
+    }
     return {
+      conditions,
+      primaryHospitalByCondition,
       conditionNames: new Map(conditions.map((condition) => [condition.id, condition.name])),
-      records: sortRecords(records.filter((record) =>
+      records: sortedRecords.filter((record) =>
         (record.type === "visit" || record.type === "test") && record.hospitalName?.trim()
-      ))
+      )
     };
   }, []);
   const hospitalNames = [...new Set(data?.records.map((record) => record.hospitalName!.trim()))];
   const records = data?.records.filter((record) => record.hospitalName?.trim() === hospitalName) || [];
+  const hospitalConditions = hospitalName
+    ? data?.conditions.filter((condition) => data.primaryHospitalByCondition.get(condition.id) === hospitalName) || []
+    : [];
 
   return (
     <main className="page">
@@ -34,6 +48,28 @@ export function HospitalRecordsPage() {
         <p className="empty">読み込み中です。</p>
       ) : hospitalName ? (
         <>
+          <section aria-labelledby="hospital-consultation-title">
+            <div className="section-title-row">
+              <h2 id="hospital-consultation-title">次に相談すること</h2>
+            </div>
+            {hospitalConditions.length ? (
+              <div className="stack">
+                {hospitalConditions.map((condition) => (
+                  <div key={condition.id}>
+                    <div className="section-title-row">
+                      <Link className="text-button" to={`/condition/${condition.id}`}>{condition.name}</Link>
+                    </div>
+                    <ConsultationNote note={condition.nextConsultationNote} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="muted">この病院が主にかかっている病院になっている病気はありません。</p>
+            )}
+          </section>
+          <div className="section-title-row">
+            <h2>通院・検査記録</h2>
+          </div>
           {records.length ? (
             <div className="timeline">
               {records.map((record, index) => (
