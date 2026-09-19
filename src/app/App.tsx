@@ -1,10 +1,12 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AllRecordsPage } from "../pages/AllRecordsPage";
+import { RecordsCalendarPage } from "../pages/RecordsCalendarPage";
 import { BackupPage } from "../pages/BackupPage";
 import { ConsultationNoteEditPage } from "../pages/ConsultationNoteEditPage";
 import { ConditionEditPage } from "../pages/ConditionEditPage";
 import { ConditionPage } from "../pages/ConditionPage";
 import { HospitalListPage } from "../pages/HospitalListPage";
+import { HospitalRecordsPage } from "../pages/HospitalRecordsPage";
 import { HomePage } from "../pages/HomePage";
 import { RecordEditPage } from "../pages/RecordEditPage";
 import { SettingsPage } from "../pages/SettingsPage";
@@ -15,6 +17,9 @@ export function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/records" element={<AllRecordsPage />} />
+        <Route path="/records/calendar" element={<RecordsCalendarPage />} />
+        <Route path="/hospitals" element={<HospitalRecordsPage />} />
+        <Route path="/hospitals/records" element={<HospitalRecordsPage />} />
         <Route path="/condition/new" element={<ConditionEditPage />} />
         <Route path="/condition/:conditionId" element={<ConditionPage />} />
         <Route path="/condition/:conditionId/edit" element={<ConditionEditPage />} />

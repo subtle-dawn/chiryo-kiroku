@@ -1,4 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
+import { Link } from "react-router-dom";
 import { Header } from "../components/Header";
 import { TimelineItem } from "../components/TimelineItem";
 import { db } from "../db/db";
@@ -12,7 +13,11 @@ export function AllRecordsPage() {
 
   return (
     <main className="page">
-      <Header title="全ての病気の記録" backTo="/" />
+      <Header title="全ての病気の記録" backTo="/" action={
+        <Link className="small-button" to="/records/calendar">
+          カレンダー
+        </Link>
+      } />
       {sortedRecords.length ? (
         <div className="timeline">
           {sortedRecords.map((record, index) => (
