@@ -1,4 +1,5 @@
 import { db } from "../db/db";
+import { assertPhotos } from "./photos";
 import type { Condition } from "../types/condition";
 import type { TreatmentRecord } from "../types/treatmentRecord";
 
@@ -20,6 +21,10 @@ export async function restoreBackup(file: File, mode: "replace" | "merge") {
   const text = await file.text();
   const parsed = JSON.parse(text) as unknown;
   assertBackupPayload(parsed);
+  for (const record of parsed.records) {
+    if (!record || typeof record !== "object") throw new Error("記録データの形式が正しくありません。");
+    assertPhotos(record.photos);
+  }
 
   await db.transaction("rw", db.conditions, db.records, async () => {
     if (mode === "replace") {

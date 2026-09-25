@@ -1,11 +1,13 @@
-import { FormEvent, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useNavigate, useParams } from "react-router-dom";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { Header } from "../components/Header";
 import { db } from "../db/db";
 import { deleteRecord, recordTypeLabels, recordTypes, saveRecord } from "../db/records";
-import type { RecordType } from "../types/treatmentRecord";
+import type { RecordPhoto, RecordType } from "../types/treatmentRecord";
+import { RecordPhotos } from "../components/RecordPhotos";
+import { MAX_PHOTOS, readPhoto } from "../services/photos";
 import { todayIsoDate } from "../utils/date";
 
 export function RecordEditPage() {
@@ -28,6 +30,10 @@ export function RecordEditPage() {
   const [hospitalName, setHospitalName] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
+  const [photos, setPhotos] = useState<RecordPhoto[]>([]);
+  const [readingPhotos, setReadingPhotos] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const busy = useRef(false);
 
   useEffect(() => {
     if (record) {
@@ -35,6 +41,7 @@ export function RecordEditPage() {
       setType(record.type);
       setDate(record.date);
       setBody(record.body);
+      setPhotos(record.photos || []);
       setHospitalName(record.hospitalName || "");
     }
   }, [record]);
@@ -45,8 +52,32 @@ export function RecordEditPage() {
     }
   }, [conditions, selectedConditionId]);
 
+  async function onPhotosChange(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+    if (!files.length || busy.current) return;
+    if (photos.length + files.length > MAX_PHOTOS) {
+      setError(`写真は1つの記録に${MAX_PHOTOS}枚まで添付できます。`);
+      return;
+    }
+    busy.current = true;
+    setReadingPhotos(true);
+    setError("");
+    try {
+      const added: RecordPhoto[] = [];
+      for (const file of files) added.push(await readPhoto(file));
+      setPhotos((current) => [...current, ...added]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "写真を読み込めませんでした。");
+    } finally {
+      busy.current = false;
+      setReadingPhotos(false);
+    }
+  }
+
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
+    if (busy.current) return;
     if (!selectedConditionId) {
       setError("病気を選択してください。");
       return;
@@ -56,6 +87,8 @@ export function RecordEditPage() {
       return;
     }
     try {
+      busy.current = true;
+      setSaving(true);
       setError("");
       await saveRecord(
         {
@@ -63,13 +96,19 @@ export function RecordEditPage() {
           type,
           date,
           body: body.trim(),
+          photos,
           hospitalName: needsHospitalName ? hospitalName.trim() || undefined : undefined
         },
         recordId
       );
       navigate(`/condition/${selectedConditionId}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "保存できませんでした。");
+      setError(err instanceof Error && err.name === "QuotaExceededError"
+        ? "端末の保存容量が不足しています。添付写真を減らすか、小さい写真を選択してください。"
+        : err instanceof Error ? err.message : "保存できませんでした。");
+    } finally {
+      busy.current = false;
+      setSaving(false);
     }
   }
 
@@ -121,13 +160,21 @@ export function RecordEditPage() {
           <span>本文</span>
           <textarea rows={9} value={body} onChange={(event) => setBody(event.target.value)} autoFocus />
         </label>
-        {error && <p className="error">{error}</p>}
-        <button className="primary-button" type="submit">
-          保存
+        <label>
+          <span>写真（任意・{photos.length}/{MAX_PHOTOS}枚）</span>
+          <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={onPhotosChange}
+            disabled={readingPhotos || saving || photos.length >= MAX_PHOTOS} aria-describedby="photo-help" />
+        </label>
+        <RecordPhotos photos={photos} disabled={readingPhotos || saving}
+          onRemove={(id) => setPhotos((current) => current.filter((photo) => photo.id !== id))} />
+        {readingPhotos && <p role="status">写真を読み込み中…</p>}
+        {error && <p className="error" role="alert">{error}</p>}
+        <button className="primary-button" type="submit" disabled={readingPhotos || saving}>
+          {saving ? "保存中…" : "保存"}
         </button>
       </form>
       {recordId && (
-        <button className="danger-button full-width-button record-delete-button" type="button" onClick={() => setConfirming(true)}>
+        <button className="danger-button full-width-button record-delete-button" type="button" disabled={readingPhotos || saving} onClick={() => setConfirming(true)}>
           この記録を削除
         </button>
       )}

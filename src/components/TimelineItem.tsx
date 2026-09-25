@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { RecordTypeBadge } from "./RecordTypeBadge";
+import { RecordPhotos } from "./RecordPhotos";
 import type { TreatmentRecord } from "../types/treatmentRecord";
 import { formatDate } from "../utils/date";
 
@@ -25,6 +26,7 @@ export function TimelineItem({ record, showDate, conditionName }: Props) {
         {conditionName && <p className="timeline-condition-name">{conditionName}</p>}
         {record.hospitalName && <p className="timeline-hospital">{record.hospitalName}</p>}
         <p className="preline">{record.body}</p>
+        <RecordPhotos photos={record.photos} />
       </div>
     </article>
   );
